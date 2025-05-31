@@ -1,0 +1,1 @@
+create index if not exists idx_last_message_id_conversation on conversation(last_message_id);

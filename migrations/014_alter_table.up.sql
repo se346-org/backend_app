@@ -1,0 +1,9 @@
+alter table conversation_member drop constraint conversation_member_user_id_fkey;
+alter table conversation_member drop constraint conversation_member_conversation_id_fkey;
+
+alter table message drop constraint message_user_id_fkey;
+alter table message drop constraint message_conversation_id_fkey;
+
+alter table seen_message drop constraint seen_message_user_id_fkey;
+alter table seen_message drop constraint seen_message_message_id_fkey;
+alter table seen_message drop constraint seen_message_conversation_id_fkey;

@@ -1,0 +1,1 @@
+alter table seen_message add constraint unique_seen_message unique (user_id, conversation_id);

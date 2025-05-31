@@ -1,0 +1,131 @@
+services:
+  nats:
+    image: nats:latest
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    command: "-js -sd /data -m 8222"
+    volumes:
+      - nats-data:/data
+  dashboard:
+    image: mdawar/nats-dashboard
+    environment:
+      # The NATS monitoring server will be proxied on /proxy/* on the frontend.
+      # See: config/Caddyfile for the reverse proxy configuration.
+      REVERSE_PROXY_UPSTREAM: 'nats:8222'
+    volumes:
+      # Optional config file.
+      - ./nats-dashboard-config.json:/srv/config.json
+    ports:
+      - target: 80
+        published: 8000
+        protocol: tcp
+  postgres:
+    image: postgres:17
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=chat_socio
+      - POSTGRES_USER=postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:  
+    image: redis:latest
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis-data:/data
+  migration:
+    container_name: chat_socio-migrate
+    build:
+      context: .
+      target: runner
+    command: ["./chat_socio", "-s", "migrate", "-c", "config.yaml"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./config-deploy.yaml:/app/config.yaml
+
+  app:
+    container_name: chat_socio-app
+    build:
+      context: .
+      target: runner
+    command: ["./chat_socio", "-s", "app", "-c", "config.yaml"]
+    ports:
+      - "8080:8080" 
+    depends_on:
+      migration:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_started
+      redis:
+        condition: service_started
+      nats:
+        condition: service_started
+      minio:
+        condition: service_healthy
+    volumes:
+      - ./config-deploy.yaml:/app/config.yaml
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "14250:14250"
+      - "16686:16686"
+      - "4317:4317"
+      - "4318:4318"
+      - "14268:14268"
+
+    environment:
+      - COLLECTOR_ZIPKIN_HTTP_PORT=9411
+    volumes:
+      - jaeger-data:/data
+  minio:
+    container_name: minio
+    image: minio/minio:latest
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ROOTNAME
+      MINIO_ROOT_PASSWORD: CHANGEME123
+      MINIO_ACCESS_KEY: access_key
+      MINIO_SECRET_KEY: secret_key
+    volumes:
+      - ~/minio/data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+  minio-mc:
+    image: minio/mc:latest
+    entrypoint: [""]
+    command: >
+      sh -c "
+        until mc alias set minio http://minio:9000 ROOTNAME CHANGEME123; do
+          echo 'Waiting for MinIO to be ready...'
+          sleep 1
+        done &&
+        mc mb minio/avatar --ignore-existing &&
+        mc anonymous set download minio/avatar &&
+        echo 'MinIO setup completed'
+      "
+    depends_on:
+      minio:
+        condition: service_started
+volumes:
+  nats-data:
+  postgres-data:
+  jaeger-data:
+  redis-data:

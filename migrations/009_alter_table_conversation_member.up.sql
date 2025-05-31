@@ -1,0 +1,1 @@
+alter table conversation_member drop column role;
