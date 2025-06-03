@@ -27,6 +27,7 @@ type Message struct {
 	ReplyTo        string     `json:"reply_to,omitempty"`
 	User           *UserInfo  `json:"-"`
 	IgnoreSend     string     `json:"-"`
+	IsRead         bool       `json:"-"` // for get list conversation by user
 }
 
 func (m *Message) TableName() string {
