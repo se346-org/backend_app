@@ -21,6 +21,18 @@ func NewUploadHandler(storage storage.ObjectStorage, obs *observability.Observab
 	return &UploadHandler{Storage: storage, Obs: obs}
 }
 
+// @Summary Upload a file
+// @Description Upload a file to a bucket
+// @Tags upload
+// @Accept multipart/form-data
+// @Produce json
+// @Param bucket_name formData string true "Bucket Name"
+// @Param object_name formData string true "Object Name"
+// @Param file formData file true "File to upload"
+// @Success 200 {object} presenter.UploadResponse "File uploaded successfully"
+// @Failure 400 {string} string "Invalid request"
+// @Failure 500 {string} string "Internal server error"
+// @Router /upload [post]
 func (h *UploadHandler) UploadFile(ctx context.Context, c *app.RequestContext) {
 	ctx, span := h.Obs.StartSpan(ctx, "UploadHandler.UploadFile")
 	defer span()

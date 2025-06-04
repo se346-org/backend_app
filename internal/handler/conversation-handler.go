@@ -18,6 +18,17 @@ type ConversationHandler struct {
 	Obs                 *observability.Observability
 }
 
+// @Summary Send a message
+// @Description Send a message in a conversation
+// @Tags conversation
+// @Accept json
+// @Produce json
+// @Param request body presenter.SendMessageRequest true "Send Message Request"
+// @Success 200 {object} presenter.MessageResponse "Message sent successfully"
+// @Failure 400 {string} string "Invalid request"
+// @Failure 401 {string} string "Unauthorized"
+// @Failure 500 {string} string "Internal server error"
+// @Router /conversation/message [post]
 func (ch *ConversationHandler) SendMessage(ctx context.Context, c *app.RequestContext) {
 	ctx, span := ch.Obs.StartSpan(ctx, "ConversationHandler.SendMessage")
 	defer span()
@@ -70,6 +81,16 @@ func (ch *ConversationHandler) SendMessage(ctx context.Context, c *app.RequestCo
 	})
 }
 
+// @Summary Create a conversation
+// @Description Create a new conversation
+// @Tags conversation
+// @Accept json
+// @Produce json
+// @Param request body presenter.CreateConversationRequest true "Create Conversation Request"
+// @Success 200 {object} presenter.ConversationResponse "Conversation created successfully"
+// @Failure 400 {string} string "Invalid request"
+// @Failure 500 {string} string "Internal server error"
+// @Router /conversation/create [post]
 func (ch *ConversationHandler) CreateConversation(ctx context.Context, c *app.RequestContext) {
 	ctx, span := ch.Obs.StartSpan(ctx, "ConversationHandler.CreateConversation")
 	defer span()
@@ -103,6 +124,17 @@ func (ch *ConversationHandler) CreateConversation(ctx context.Context, c *app.Re
 	})
 }
 
+// @Summary Get list of conversations
+// @Description Get a list of conversations for the current user
+// @Tags conversation
+// @Accept json
+// @Produce json
+// @Param last_message_id query string false "Last message ID for pagination"
+// @Param limit query int false "Limit number of conversations"
+// @Success 200 {array} presenter.GetListConversationResponse "List conversation fetched successfully"
+// @Failure 401 {string} string "Unauthorized"
+// @Failure 500 {string} string "Internal server error"
+// @Router /conversation/list [get]
 func (ch *ConversationHandler) GetListConversation(ctx context.Context, c *app.RequestContext) {
 	ctx, span := ch.Obs.StartSpan(ctx, "ConversationHandler.GetListConversation")
 	defer span()
@@ -159,6 +191,20 @@ func (ch *ConversationHandler) GetListConversation(ctx context.Context, c *app.R
 	})
 }
 
+// @Summary Get list of messages
+// @Description Get a list of messages in a conversation
+// @Tags conversation
+// @Accept json
+// @Produce json
+// @Param conversation_id query string true "Conversation ID"
+// @Param last_message_id query string false "Last message ID for pagination"
+// @Param limit query int false "Limit number of messages"
+// @Success 200 {array} presenter.MessageResponse "List message fetched successfully"
+// @Failure 400 {string} string "Conversation ID is required"
+// @Failure 401 {string} string "Unauthorized"
+// @Failure 404 {string} string "Not found"
+// @Failure 500 {string} string "Internal server error"
+// @Router /conversation/messages [get]
 func (ch *ConversationHandler) GetListMessage(ctx context.Context, c *app.RequestContext) {
 	ctx, span := ch.Obs.StartSpan(ctx, "ConversationHandler.GetListMessage")
 	defer span()
@@ -206,6 +252,15 @@ func (ch *ConversationHandler) GetListMessage(ctx context.Context, c *app.Reques
 	})
 }
 
+// @Summary Get conversation by ID
+// @Description Get a conversation by its ID
+// @Tags conversation
+// @Accept json
+// @Produce json
+// @Param conversation_id query string true "Conversation ID"
+// @Success 200 {object} presenter.ConversationResponse "Conversation fetched successfully"
+// @Failure 500 {string} string "Internal server error"
+// @Router /conversation [get]
 func (ch *ConversationHandler) GetConversationByID(ctx context.Context, c *app.RequestContext) {
 	ctx, span := ch.Obs.StartSpan(ctx, "ConversationHandler.GetConversationByID")
 	defer span()
@@ -226,6 +281,17 @@ func (ch *ConversationHandler) GetConversationByID(ctx context.Context, c *app.R
 	})
 }
 
+// @Summary Seen message
+// @Description Mark a message as seen
+// @Tags conversation
+// @Accept json
+// @Produce json
+// @Param request body presenter.SeenMessageRequest true "Seen Message Request"
+// @Success 200 {string} string "Seen message successfully"
+// @Failure 400 {string} string "Invalid request"
+// @Failure 401 {string} string "Unauthorized"
+// @Failure 500 {string} string "Internal server error"
+// @Router /conversation/seen [post]
 func (ch *ConversationHandler) SeenMessage(ctx context.Context, c *app.RequestContext) {
 	ctx, span := ch.Obs.StartSpan(ctx, "ConversationHandler.SeenMessage")
 	defer span()

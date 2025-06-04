@@ -8,7 +8,19 @@ import (
 	"github.com/chat-socio/backend/cmd/migrate"
 	"github.com/chat-socio/backend/configuration"
 	"github.com/spf13/cobra"
+	_ "github.com/chat-socio/backend/docs" // This is important!
 )
+
+// @title Chat Socio API
+// @version 1.0
+// @description This is the API documentation for Chat Socio backend service
+// @host localhost:8887
+// @BasePath /
+// @schemes http https
+// @securityDefinitions.apikey BearerAuth
+// @in header
+// @name Authorization
+// @description Type "Bearer" followed by a space and JWT token.
 
 var (
 	svc        string
