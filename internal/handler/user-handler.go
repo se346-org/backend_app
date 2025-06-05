@@ -20,6 +20,16 @@ type UserHandler struct {
 	Obs         *observability.Observability
 }
 
+// @Summary Register a new user
+// @Description Register a new user with email and password
+// @Tags user
+// @Accept json
+// @Produce json
+// @Param request body presenter.RegisterRequest true "Register Request"
+// @Success 200 {object} presenter.RegisterResponse "User registered successfully"
+// @Failure 400 {string} string "Invalid request or validation error"
+// @Failure 500 {string} string "Internal server error"
+// @Router /user/register [post]
 func (uh *UserHandler) Register(ctx context.Context, c *app.RequestContext) {
 	ctx, span := uh.Obs.StartSpan(ctx, "UserHandler.Register")
 	defer span()
@@ -52,6 +62,17 @@ func (uh *UserHandler) Register(ctx context.Context, c *app.RequestContext) {
 	})
 }
 
+// @Summary Login user
+// @Description Login with email and password
+// @Tags user
+// @Accept json
+// @Produce json
+// @Param request body presenter.LoginRequest true "Login Request"
+// @Success 200 {object} presenter.LoginResponse "User logged in successfully"
+// @Failure 400 {string} string "Invalid request or validation error"
+// @Failure 404 {string} string "Account not found or wrong password"
+// @Failure 500 {string} string "Internal server error"
+// @Router /user/login [post]
 func (uh *UserHandler) Login(ctx context.Context, c *app.RequestContext) {
 	ctx, span := uh.Obs.StartSpan(ctx, "UserHandler.Login")
 	defer span()
@@ -102,6 +123,16 @@ func (uh *UserHandler) Login(ctx context.Context, c *app.RequestContext) {
 	})
 }
 
+// @Summary Get my info
+// @Description Get information about the current user
+// @Tags user
+// @Accept json
+// @Produce json
+// @Success 200 {object} presenter.GetUserInfoResponse "User info retrieved successfully"
+// @Failure 401 {string} string "Unauthorized"
+// @Failure 404 {string} string "Account not found"
+// @Failure 500 {string} string "Internal server error"
+// @Router /user/me [get]
 func (uh *UserHandler) GetMyInfo(ctx context.Context, c *app.RequestContext) {
 	ctx, span := uh.Obs.StartSpan(ctx, "UserHandler.GetMyInfo")
 	defer span()
@@ -130,6 +161,17 @@ func (uh *UserHandler) GetMyInfo(ctx context.Context, c *app.RequestContext) {
 	})
 }
 
+// @Summary Get list of users
+// @Description Get a list of users with optional keyword, limit, and last_id
+// @Tags user
+// @Accept json
+// @Produce json
+// @Param keyword query string false "Keyword to search"
+// @Param limit query int false "Limit number of users"
+// @Param last_id query string false "Last user ID for pagination"
+// @Success 200 {array} presenter.GetUserInfoResponse "User list retrieved successfully"
+// @Failure 500 {string} string "Internal server error"
+// @Router /user/list [get]
 func (uh *UserHandler) GetListUser(ctx context.Context, c *app.RequestContext) {
 	ctx, span := uh.Obs.StartSpan(ctx, "UserHandler.GetListUser")
 	defer span()
