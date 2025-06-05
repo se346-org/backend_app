@@ -37,7 +37,7 @@ func NewFriendHandler(friendUseCase usecase.FriendUseCase, obs *observability.Ob
 // @Failure 400 {object} presenter.BaseEmptyResponse
 // @Failure 500 {object} presenter.BaseEmptyResponse
 // @Security BearerAuth
-// @Router /auth/friend/{friend_id} [post]
+// @Router /friend/{friend_id} [post]
 func (h *FriendHandler) SendFriendRequest(ctx context.Context, c *app.RequestContext) {
 	friendID := c.Param("friend_id")
 	accountID, ok := ctx.Value(utils.AccountIDKey).(string)
@@ -99,7 +99,7 @@ func (h *FriendHandler) SendFriendRequest(ctx context.Context, c *app.RequestCon
 // @Failure 400 {object} presenter.BaseEmptyResponse
 // @Failure 500 {object} presenter.BaseEmptyResponse
 // @Security BearerAuth
-// @Router /auth/friend/{friend_id}/accept [post]
+// @Router /friend/{friend_id}/accept [post]
 func (h *FriendHandler) AcceptFriendRequest(ctx context.Context, c *app.RequestContext) {
 	friendID := c.Param("friend_id")
 	accountID, ok := ctx.Value(utils.AccountIDKey).(string)
@@ -166,7 +166,7 @@ func (h *FriendHandler) AcceptFriendRequest(ctx context.Context, c *app.RequestC
 // @Failure 400 {object} presenter.BaseEmptyResponse
 // @Failure 500 {object} presenter.BaseEmptyResponse
 // @Security BearerAuth
-// @Router /auth/friend/{friend_id}/reject [post]
+// @Router /friend/{friend_id}/reject [post]
 func (h *FriendHandler) RejectFriendRequest(ctx context.Context, c *app.RequestContext) {
 	friendID := c.Param("friend_id")
 	accountID, ok := ctx.Value(utils.AccountIDKey).(string)
@@ -235,7 +235,7 @@ func (h *FriendHandler) RejectFriendRequest(ctx context.Context, c *app.RequestC
 // @Success 200 {object} presenter.BaseFriendListResponse
 // @Failure 400 {object} presenter.BaseEmptyResponse
 // @Failure 500 {object} presenter.BaseEmptyResponse
-// @Router /auth/friend [get]
+// @Router /friend [get]
 func (h *FriendHandler) GetFriends(ctx context.Context, c *app.RequestContext) {
 	accountID, ok := ctx.Value(utils.AccountIDKey).(string)
 	if !ok {
@@ -331,7 +331,7 @@ func (h *FriendHandler) GetFriends(ctx context.Context, c *app.RequestContext) {
 // @Success 200 {object} presenter.BaseEmptyResponse
 // @Failure 400 {object} presenter.BaseEmptyResponse
 // @Failure 500 {object} presenter.BaseEmptyResponse
-// @Router /auth/friend/{friend_id} [delete]
+// @Router /friend/{friend_id} [delete]
 func (h *FriendHandler) Unfriend(ctx context.Context, c *app.RequestContext) {
 	friendID := c.Param("friend_id")
 	accountID, ok := ctx.Value(utils.AccountIDKey).(string)
@@ -399,7 +399,7 @@ func (h *FriendHandler) Unfriend(ctx context.Context, c *app.RequestContext) {
 // @Success 200 {object} presenter.BaseFriendListResponse
 // @Failure 400 {object} presenter.BaseEmptyResponse
 // @Failure 500 {object} presenter.BaseEmptyResponse
-// @Router /auth/friend/requests [get]
+// @Router /friend/requests [get]
 func (h *FriendHandler) GetFriendRequests(ctx context.Context, c *app.RequestContext) {
 	accountID, ok := ctx.Value(utils.AccountIDKey).(string)
 	if !ok {
@@ -472,7 +472,7 @@ func (h *FriendHandler) GetFriendRequests(ctx context.Context, c *app.RequestCon
 // @Success 200 {object} presenter.BaseFriendListResponse
 // @Failure 400 {object} presenter.BaseEmptyResponse
 // @Failure 500 {object} presenter.BaseEmptyResponse
-// @Router /auth/friend/received [get]
+// @Router /friend/received [get]
 func (h *FriendHandler) GetFriendRequestsReceived(ctx context.Context, c *app.RequestContext) {
 	accountID, ok := ctx.Value(utils.AccountIDKey).(string)
 	if !ok {

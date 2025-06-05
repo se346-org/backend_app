@@ -229,6 +229,15 @@ func SetUpRoutes(s *server.Hertz, handler *Handler) {
 	// @Router /user/login [post]
 	s.POST(("/user/login"), handler.UserHandler.Login)
 
+	// Friend routes
+	s.POST("/friend/:friend_id", handler.FriendHandler.SendFriendRequest)
+	s.POST("/friend/:friend_id/accept", handler.FriendHandler.AcceptFriendRequest)
+	s.POST("/friend/:friend_id/reject", handler.FriendHandler.RejectFriendRequest)
+	s.GET("/friend", handler.FriendHandler.GetFriends)
+	s.GET("/friend/requests", handler.FriendHandler.GetFriendRequests)
+	s.GET("/friend/received", handler.FriendHandler.GetFriendRequestsReceived)
+	s.DELETE("/friend/:friend_id", handler.FriendHandler.Unfriend)
+
 	// Route use auth middleware
 	authGroup := s.Group("/auth")
 	authGroup.Use(handler.Middleware.AuthMiddleware())
@@ -336,13 +345,4 @@ func SetUpRoutes(s *server.Hertz, handler *Handler) {
 	// @Success 101 {string} string "Switching Protocols"
 	// @Router /ws [get]
 	s.GET("/ws", handler.WebSocketHandler.HandleWebsocket)
-
-	// Friend routes
-	authGroup.POST("/friend/:friend_id", handler.FriendHandler.SendFriendRequest)
-	authGroup.POST("/friend/:friend_id/accept", handler.FriendHandler.AcceptFriendRequest)
-	authGroup.POST("/friend/:friend_id/reject", handler.FriendHandler.RejectFriendRequest)
-	authGroup.GET("/friend", handler.FriendHandler.GetFriends)
-	authGroup.GET("/friend/requests", handler.FriendHandler.GetFriendRequests)
-	authGroup.GET("/friend/received", handler.FriendHandler.GetFriendRequestsReceived)
-	authGroup.DELETE("/friend/:friend_id", handler.FriendHandler.Unfriend)
 }
