@@ -128,11 +128,12 @@ func (uh *UserHandler) Login(ctx context.Context, c *app.RequestContext) {
 // @Tags user
 // @Accept json
 // @Produce json
+// @Security BearerAuth
 // @Success 200 {object} presenter.GetUserInfoResponse "User info retrieved successfully"
 // @Failure 401 {string} string "Unauthorized"
 // @Failure 404 {string} string "Account not found"
 // @Failure 500 {string} string "Internal server error"
-// @Router /user/me [get]
+// @Router /auth/user/info [get]
 func (uh *UserHandler) GetMyInfo(ctx context.Context, c *app.RequestContext) {
 	ctx, span := uh.Obs.StartSpan(ctx, "UserHandler.GetMyInfo")
 	defer span()

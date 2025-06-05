@@ -67,3 +67,14 @@ type SeenMessageRepository interface {
 	CreateSeenMessage(ctx context.Context, seenMessage *SeenMessage) error
 	GetListSeenMessageByConversationID(ctx context.Context, conversationID string) ([]*SeenMessage, error)
 }
+
+type FriendRepository interface {
+	CreateFriend(ctx context.Context, friend *Friend) error
+	GetFriendByID(ctx context.Context, id string) (*Friend, error)
+	GetFriendByUserIDs(ctx context.Context, userID string, friendID string) (*Friend, error)
+	GetListFriendsByUserID(ctx context.Context, userID string, status FriendStatus, limit int, lastID string) ([]*FriendWithUser, error)
+	UpdateFriendStatus(ctx context.Context, id string, status FriendStatus) error
+	DeleteFriend(ctx context.Context, id string) error
+	CheckFriendshipExists(ctx context.Context, userID string, friendID string) (bool, error)
+	GetListFriendRequestsReceived(ctx context.Context, userID string, limit int, lastID string) ([]*FriendWithUser, error)
+}

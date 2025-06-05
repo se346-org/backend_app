@@ -45,6 +45,7 @@ type Handler struct {
 	Middleware          *middleware.Middleware
 	WebSocketHandler    *handler.WebSocketHandler
 	UploadHandler       *handler.UploadHandler
+	FriendHandler       *handler.FriendHandler
 }
 
 func CreateStream(js natsjs.JetStreamContext) error {
@@ -117,6 +118,7 @@ func RunApp() {
 	messageRepository := postgresql.NewMessageRepository(db)
 	userOnlineRepository := postgresql.NewUserOnlineRepository(db)
 	seenMessageRepository := postgresql.NewSeenMessageRepository(db, observability)
+	friendRepository := postgresql.NewFriendRepository(db)
 
 	// Initialize publisher
 	messagePublisher := nats.NewPublisher(js)
@@ -125,6 +127,7 @@ func RunApp() {
 	userUseCase := usecase.NewUserUseCase(accountRepository, userRepository, sessionRepository, sessionCacheRepository, userCacheRepository, observability)
 	conversationUseCase := usecase.NewConversationUseCase(conversationRepository, messageRepository, messagePublisher, userOnlineRepository, userRepository, seenMessageRepository, observability)
 	userOnlineUseCase := usecase.NewUserOnlineUsecase(userOnlineRepository)
+	friendUseCase := usecase.NewFriendUseCase(friendRepository, userRepository, observability)
 
 	// Initialize the handler
 	handler := &Handler{
@@ -148,6 +151,7 @@ func RunApp() {
 			Storage: storage,
 			Obs:     observability,
 		},
+		FriendHandler: handler.NewFriendHandler(friendUseCase, observability, userCacheRepository),
 	}
 
 	// Init subscriber
@@ -332,4 +336,13 @@ func SetUpRoutes(s *server.Hertz, handler *Handler) {
 	// @Success 101 {string} string "Switching Protocols"
 	// @Router /ws [get]
 	s.GET("/ws", handler.WebSocketHandler.HandleWebsocket)
+
+	// Friend routes
+	authGroup.POST("/friend/:friend_id", handler.FriendHandler.SendFriendRequest)
+	authGroup.POST("/friend/:friend_id/accept", handler.FriendHandler.AcceptFriendRequest)
+	authGroup.POST("/friend/:friend_id/reject", handler.FriendHandler.RejectFriendRequest)
+	authGroup.GET("/friend", handler.FriendHandler.GetFriends)
+	authGroup.GET("/friend/requests", handler.FriendHandler.GetFriendRequests)
+	authGroup.GET("/friend/received", handler.FriendHandler.GetFriendRequestsReceived)
+	authGroup.DELETE("/friend/:friend_id", handler.FriendHandler.Unfriend)
 }

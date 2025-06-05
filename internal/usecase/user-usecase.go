@@ -215,7 +215,25 @@ func (u *userUseCase) Login(ctx context.Context, loginRequest *presenter.LoginRe
 		return nil, err
 	}
 
-	// Create access token from session
+	// Cache the session
+	err = u.sessionCacheRepository.CreateSessionWithExpireTime(ctx, session)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get user info and cache the user ID
+	user, err := u.userRepository.GetUserByAccountID(ctx, account.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Cache the user ID
+	err = u.userCacheRepository.SetUserIDByAccountID(ctx, account.ID, user.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	// return the access token
 	var claims = jwt.JWTClaims{
 		Jit: sessionToken,
 		Sub: account.ID,
@@ -223,13 +241,6 @@ func (u *userUseCase) Login(ctx context.Context, loginRequest *presenter.LoginRe
 		Exp: expiredAt.Unix(),
 	}
 
-	// Cache the session
-	err = u.sessionCacheRepository.CreateSessionWithExpireTime(ctx, session)
-	if err != nil {
-		return nil, err
-	}
-
-	// return the access token
 	jwtToken, err := jwt.GenerateHS256JWT(claims, configuration.ConfigInstance.JWT.SecretKey)
 	if err != nil {
 		return nil, err

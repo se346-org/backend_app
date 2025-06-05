@@ -1,5 +1,21 @@
 basePath: /
 definitions:
+  presenter.BaseEmptyResponse:
+    properties:
+      data:
+        $ref: '#/definitions/presenter.EmptyResponse'
+      message:
+        type: string
+    type: object
+  presenter.BaseFriendListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/presenter.FriendResponse'
+        type: array
+      message:
+        type: string
+    type: object
   presenter.ConversationMemberResponse:
     properties:
       avatar:
@@ -43,6 +59,34 @@ definitions:
       title:
         type: string
       type:
+        type: string
+    type: object
+  presenter.EmptyResponse:
+    type: object
+  presenter.FriendResponse:
+    properties:
+      created_at:
+        type: string
+      friend_id:
+        type: string
+      id:
+        type: string
+      status:
+        type: string
+      updated_at:
+        type: string
+      user:
+        properties:
+          avatar:
+            type: string
+          email:
+            type: string
+          full_name:
+            type: string
+          id:
+            type: string
+        type: object
+      user_id:
         type: string
     type: object
   presenter.GetListConversationResponse:
@@ -190,6 +234,268 @@ info:
   title: Chat Socio API
   version: "1.0"
 paths:
+  /auth/friend:
+    get:
+      consumes:
+      - application/json
+      description: Get list of friends
+      parameters:
+      - default: accepted
+        description: Friend status (pending/accepted)
+        in: query
+        name: status
+        type: string
+      - default: 10
+        description: Limit
+        in: query
+        name: limit
+        type: integer
+      - description: Last ID for pagination
+        in: query
+        name: last_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/presenter.BaseFriendListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/presenter.BaseEmptyResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/presenter.BaseEmptyResponse'
+      security:
+      - BearerAuth: []
+      summary: Get friends
+      tags:
+      - friends
+  /auth/friend/{friend_id}:
+    delete:
+      consumes:
+      - application/json
+      description: Remove a friend
+      parameters:
+      - description: Friend ID
+        in: path
+        name: friend_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/presenter.BaseEmptyResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/presenter.BaseEmptyResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/presenter.BaseEmptyResponse'
+      security:
+      - BearerAuth: []
+      summary: Unfriend
+      tags:
+      - friends
+    post:
+      consumes:
+      - application/json
+      description: Send a friend request to another user
+      parameters:
+      - description: Friend ID
+        in: path
+        name: friend_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/presenter.BaseEmptyResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/presenter.BaseEmptyResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/presenter.BaseEmptyResponse'
+      security:
+      - BearerAuth: []
+      summary: Send friend request
+      tags:
+      - friends
+  /auth/friend/{friend_id}/accept:
+    post:
+      consumes:
+      - application/json
+      description: Accept a friend request
+      parameters:
+      - description: Friend ID
+        in: path
+        name: friend_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/presenter.BaseEmptyResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/presenter.BaseEmptyResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/presenter.BaseEmptyResponse'
+      security:
+      - BearerAuth: []
+      summary: Accept friend request
+      tags:
+      - friends
+  /auth/friend/{friend_id}/reject:
+    post:
+      consumes:
+      - application/json
+      description: Reject a friend request
+      parameters:
+      - description: Friend ID
+        in: path
+        name: friend_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/presenter.BaseEmptyResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/presenter.BaseEmptyResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/presenter.BaseEmptyResponse'
+      security:
+      - BearerAuth: []
+      summary: Reject friend request
+      tags:
+      - friends
+  /auth/friend/received:
+    get:
+      consumes:
+      - application/json
+      description: Get list of friend requests received by the user
+      parameters:
+      - default: 10
+        description: Limit
+        in: query
+        name: limit
+        type: integer
+      - description: Last ID for pagination
+        in: query
+        name: last_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/presenter.BaseFriendListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/presenter.BaseEmptyResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/presenter.BaseEmptyResponse'
+      security:
+      - BearerAuth: []
+      summary: Get friend requests received
+      tags:
+      - friends
+  /auth/friend/requests:
+    get:
+      consumes:
+      - application/json
+      description: Get list of pending friend requests sent by the user
+      parameters:
+      - default: 10
+        description: Limit
+        in: query
+        name: limit
+        type: integer
+      - description: Last ID for pagination
+        in: query
+        name: last_id
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/presenter.BaseFriendListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/presenter.BaseEmptyResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/presenter.BaseEmptyResponse'
+      security:
+      - BearerAuth: []
+      summary: Get friend requests sent
+      tags:
+      - friends
+  /auth/user/info:
+    get:
+      consumes:
+      - application/json
+      description: Get information about the current user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User info retrieved successfully
+          schema:
+            $ref: '#/definitions/presenter.GetUserInfoResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "404":
+          description: Account not found
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      security:
+      - BearerAuth: []
+      summary: Get my info
+      tags:
+      - user
   /conversation:
     get:
       consumes:
@@ -499,33 +805,6 @@ paths:
           schema:
             type: string
       summary: Login user
-      tags:
-      - user
-  /user/me:
-    get:
-      consumes:
-      - application/json
-      description: Get information about the current user
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: User info retrieved successfully
-          schema:
-            $ref: '#/definitions/presenter.GetUserInfoResponse'
-        "401":
-          description: Unauthorized
-          schema:
-            type: string
-        "404":
-          description: Account not found
-          schema:
-            type: string
-        "500":
-          description: Internal server error
-          schema:
-            type: string
-      summary: Get my info
       tags:
       - user
   /user/register:
