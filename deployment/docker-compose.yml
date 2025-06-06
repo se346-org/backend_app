@@ -45,7 +45,7 @@ services:
   migration:
     container_name: chat_socio-migrate
     build:
-      context: .
+      context: ../
       target: runner
     command: ["./chat_socio", "-s", "migrate", "-c", "config.yaml"]
     depends_on:
@@ -57,7 +57,7 @@ services:
   app:
     container_name: chat_socio-app
     build:
-      context: .
+      context: ../
       target: runner
     command: ["./chat_socio", "-s", "app", "-c", "config.yaml"]
     ports:

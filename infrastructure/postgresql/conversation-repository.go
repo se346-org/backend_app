@@ -125,7 +125,7 @@ func (c *conversationRepository) GetListConversationByUserID(ctx context.Context
 	// 	LEFT JOIN user_info ui ON m.user_id = ui.id
 	// 	WHERE c.id IN (SELECT DISTINCT conversation_id FROM conversation_member WHERE user_id = $1) %s
 	// 	ORDER BY last_message_id DESC LIMIT %d`, strings.Join(fieldsWithCoalesce, ", "), conditionLastMessageID, limit)
-
+	// Add seen_message check to determine if the last message has been read
 	query := fmt.Sprintf(`
 		WITH conversation_data AS (
 			SELECT c.id, c.created_at, c.type, c.title, c.avatar, c.updated_at, c.deleted_at, 
@@ -141,7 +141,16 @@ func (c *conversationRepository) GetListConversationByUserID(ctx context.Context
 				COALESCE(ui.id::text, '') as user_id,
 				COALESCE(ui.full_name::text, '') as user_full_name,
 				COALESCE(ui.avatar::text, '') as user_avatar,
-				COALESCE(ui.type::text, '') as user_type
+				COALESCE(ui.type::text, '') as user_type,
+				CASE 
+					WHEN EXISTS (
+						SELECT 1 FROM seen_message sm 
+						WHERE sm.conversation_id = c.id 
+						AND sm.user_id = $1
+						AND sm.message_id = c.last_message_id
+					) THEN true
+					ELSE false
+				END as is_read
 			FROM conversation c
 			LEFT JOIN message m ON c.last_message_id = m.id
 			LEFT JOIN user_info ui ON m.user_id = ui.id
@@ -213,6 +222,7 @@ func (c *conversationRepository) GetListConversationByUserID(ctx context.Context
 			&userInfo.FullName,
 			&userInfo.Avatar,
 			&userInfo.Type,
+			&message.IsRead,
 			&membersString,
 		}
 		if err := rows.Scan(values...); err != nil {

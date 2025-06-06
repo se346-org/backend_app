@@ -194,6 +194,7 @@ func SetUpRoutes(s *server.Hertz, handler *Handler) {
 	authGroup.Use(handler.Middleware.AuthMiddleware())
 	authGroup.GET("/user/info", handler.UserHandler.GetMyInfo)
 	authGroup.GET("/user/search", handler.UserHandler.GetListUser)
+	authGroup.PATCH("/user", handler.UserHandler.UpdateUser)
 	// Conversation
 	authGroup.GET("/conversation", handler.ConversationHandler.GetListConversation)
 	authGroup.POST("/conversation", handler.ConversationHandler.CreateConversation)

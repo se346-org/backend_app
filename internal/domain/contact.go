@@ -8,6 +8,7 @@ type Contact struct {
 	FriendID  string     `json:"friend_id,omitempty"`
 	CreatedAt *time.Time `json:"created_at,omitempty"`
 	UpdatedAt *time.Time `json:"updated_at,omitempty"`
+	Friend    *UserInfo  `json:"-"`
 }
 
 func (c *Contact) TableName() string {
@@ -20,7 +21,7 @@ func (c *Contact) MapFields() ([]string, []any) {
 			"user_id",
 			"friend_id",
 			"created_at",
-			"updated_at", 
+			"updated_at",
 		}, []any{
 			&c.ID,
 			&c.UserID,

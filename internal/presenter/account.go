@@ -89,3 +89,15 @@ type UserResponse struct {
 	CreatedAt *time.Time `json:"created_at,omitempty"`
 	UpdatedAt *time.Time `json:"updated_at,omitempty"`
 }
+
+type UpdateUserRequest struct {
+	FullName string `json:"full_name,omitempty"`
+	Avatar   string `json:"avatar,omitempty"`
+}
+
+func (r *UpdateUserRequest) Validate() error {
+	if r.FullName == "" && r.Avatar == "" {
+		return fmt.Errorf("at least one field must be provided")
+	}
+	return nil
+}

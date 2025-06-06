@@ -86,6 +86,7 @@ type MessageResponse struct {
 	Type           string        `json:"type,omitempty"`
 	DeletedAt      *time.Time    `json:"deleted_at,omitempty"`
 	ReplyTo        string        `json:"reply_to,omitempty"`
+	IsRead         bool          `json:"is_read"`
 }
 
 type GetListConversationResponse struct {

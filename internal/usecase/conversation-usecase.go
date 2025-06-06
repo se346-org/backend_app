@@ -357,6 +357,7 @@ func (c *conversationUseCase) GetListConversationByUserID(ctx context.Context, u
 				DeletedAt:      conversation.LastMessage.DeletedAt,
 				ReplyTo:        conversation.LastMessage.ReplyTo,
 				ConversationID: conversation.LastMessage.ConversationID,
+				IsRead:         conversation.LastMessage.IsRead,
 				User: &presenter.UserResponse{
 					UserID:   conversation.LastMessage.User.ID,
 					FullName: conversation.LastMessage.User.FullName,
