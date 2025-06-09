@@ -50,6 +50,7 @@ type ConversationRepository interface {
 	GetConversationByID(ctx context.Context, id string) (*Conversation, []*ConversationMemberWithUser, error)
 	UpdateLastMessageID(ctx context.Context, conversationID string, lastMessageID string) error
 	CheckIsMemberOfConversation(ctx context.Context, userID string, conversationID string) (bool, error)
+	CheckDMConversationExist(ctx context.Context, userID1 string, userID2 string) (*Conversation, error)
 }
 
 type MessageRepository interface {

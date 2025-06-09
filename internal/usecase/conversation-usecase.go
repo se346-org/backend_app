@@ -356,6 +356,20 @@ func NewConversationUseCase(conversationRepository domain.ConversationRepository
 
 // CreateConversation implements ConversationUseCase.
 func (c *conversationUseCase) CreateConversation(ctx context.Context, conversation *presenter.CreateConversationRequest) (*presenter.ConversationResponse, error) {
+	if conversation.Type == domain.ConversationTypeDM {
+		existConversation, err := c.conversationRepository.CheckDMConversationExist(ctx, conversation.Members[0], conversation.Members[1])
+		if err != nil {
+			return nil, err
+		}
+		if existConversation != nil {
+			return &presenter.ConversationResponse{
+				ConversationID: existConversation.ID,
+				Type:           existConversation.Type,
+				Title:          existConversation.Title,
+				Avatar:         existConversation.Avatar,
+			}, nil
+		}
+	}
 	conversationID, err := uuid.NewID()
 	if err != nil {
 		return nil, err
