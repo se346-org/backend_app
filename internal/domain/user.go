@@ -47,8 +47,3 @@ func (u *UserInfo) MapFields() ([]string, []any) {
 			&u.UpdatedAt,
 		}
 }
-
-type UpdateUserRequest struct {
-	FullName string `json:"full_name,omitempty"`
-	Avatar   string `json:"avatar,omitempty"`
-}

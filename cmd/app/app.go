@@ -8,6 +8,7 @@ import (
 	"syscall"
 
 	"github.com/chat-socio/backend/configuration"
+	"github.com/chat-socio/backend/infrastructure/fcm"
 	"github.com/chat-socio/backend/infrastructure/http"
 	"github.com/chat-socio/backend/infrastructure/minio"
 	"github.com/chat-socio/backend/infrastructure/nats"
@@ -31,10 +32,22 @@ type Handler struct {
 	Middleware          *middleware.Middleware
 	WebSocketHandler    *handler.WebSocketHandler
 	UploadHandler       *handler.UploadHandler
+	FCMHandler          *handler.FCMHandler
 }
 
 func CreateStream(js natsjs.JetStreamContext) error {
+	js.DeleteStream(domain.STREAM_NAME_FCM)
+	js.DeleteStream(domain.STREAM_NAME_CONVERSATION)
+	js.DeleteStream(domain.STREAM_NAME_WS_MESSAGE)
+
 	_, err := js.AddStream(&natsjs.StreamConfig{
+		Name:     domain.STREAM_NAME_FCM,
+		Subjects: []string{domain.SUBJECT_WILDCARD_FCM},
+	})
+	if err != nil {
+		return err
+	}
+	_, err = js.AddStream(&natsjs.StreamConfig{
 		Name:     domain.STREAM_NAME_CONVERSATION,
 		Subjects: []string{domain.SUBJECT_WILDCARD_CONVERSATION},
 	})
@@ -93,6 +106,12 @@ func RunApp() {
 		panic(err)
 	}
 
+	// Initialize FCM client
+	fcmClient, err := fcm.NewFCMClient(ctx, configuration.ConfigInstance.FCM)
+	if err != nil {
+		panic(err)
+	}
+
 	// Initialize repositories
 	accountRepository := postgresql.NewAccountRepository(db)
 	userRepository := postgresql.NewUserRepository(db, observability)
@@ -103,14 +122,16 @@ func RunApp() {
 	messageRepository := postgresql.NewMessageRepository(db)
 	userOnlineRepository := postgresql.NewUserOnlineRepository(db)
 	seenMessageRepository := postgresql.NewSeenMessageRepository(db, observability)
+	fcmRepository := postgresql.NewFcmRepository(db, observability)
 
 	// Initialize publisher
 	messagePublisher := nats.NewPublisher(js)
 
 	// Initialize use cases
 	userUseCase := usecase.NewUserUseCase(accountRepository, userRepository, sessionRepository, sessionCacheRepository, userCacheRepository, observability)
-	conversationUseCase := usecase.NewConversationUseCase(conversationRepository, messageRepository, messagePublisher, userOnlineRepository, userRepository, seenMessageRepository, observability)
+	conversationUseCase := usecase.NewConversationUseCase(conversationRepository, messageRepository, messagePublisher, userOnlineRepository, userRepository, seenMessageRepository, fcmRepository, observability, fcmClient)
 	userOnlineUseCase := usecase.NewUserOnlineUsecase(userOnlineRepository)
+	fcmUseCase := usecase.NewFCMUseCase(fcmRepository, observability)
 
 	// Initialize the handler
 	handler := &Handler{
@@ -134,6 +155,11 @@ func RunApp() {
 			Storage: storage,
 			Obs:     observability,
 		},
+		FCMHandler: &handler.FCMHandler{
+			FcmUseCase:  fcmUseCase,
+			UserUseCase: userUseCase,
+			Obs:         observability,
+		},
 	}
 
 	// Init subscriber
@@ -151,6 +177,12 @@ func RunApp() {
 
 	SeenMessageSubscriber := nats.NewQueueSubscriber(js, domain.QUEUE_NAME_SEEN_MESSAGE, domain.CONSUMER_NAME_SEEN_MESSAGE)
 	err = SeenMessageSubscriber.Subscribe(ctx, domain.SUBJECT_SEEN_MESSAGE, nats.WrapHandler(conversationUseCase.HandleSeenMessage))
+	if err != nil {
+		panic(err)
+	}
+
+	FcmMessageSubscriber := nats.NewQueueSubscriber(js, domain.QUEUE_NAME_FCM_MESSAGE, domain.CONSUMER_NAME_FCM_MESSAGE)
+	err = FcmMessageSubscriber.Subscribe(ctx, domain.SUBJECT_FCM_MESSAGE, nats.WrapHandler(conversationUseCase.HandleSendMessageToFCM))
 	if err != nil {
 		panic(err)
 	}
@@ -194,7 +226,6 @@ func SetUpRoutes(s *server.Hertz, handler *Handler) {
 	authGroup.Use(handler.Middleware.AuthMiddleware())
 	authGroup.GET("/user/info", handler.UserHandler.GetMyInfo)
 	authGroup.GET("/user/search", handler.UserHandler.GetListUser)
-	authGroup.PATCH("/user", handler.UserHandler.UpdateUser)
 	// Conversation
 	authGroup.GET("/conversation", handler.ConversationHandler.GetListConversation)
 	authGroup.POST("/conversation", handler.ConversationHandler.CreateConversation)
@@ -209,6 +240,10 @@ func SetUpRoutes(s *server.Hertz, handler *Handler) {
 
 	// Seen message
 	authGroup.POST("/seen-message", handler.ConversationHandler.SeenMessage)
+
+	// FCM
+	authGroup.POST("/fcm/token", handler.FCMHandler.CreateFCMToken)
+	authGroup.DELETE("/fcm/token", handler.FCMHandler.DeleteFCMToken)
 
 	s.GET("/ws", handler.WebSocketHandler.HandleWebsocket)
 }

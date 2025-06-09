@@ -4,6 +4,8 @@ WORKDIR /app
 
 COPY . .
 
+RUN go mod download && go mod verify
+
 RUN go build -o chat_socio ./cmd/
 
 FROM alpine:latest AS runner

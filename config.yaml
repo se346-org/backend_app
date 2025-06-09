@@ -37,6 +37,10 @@ minio:
   secret_key: "CHANGEME123"
   use_ssl: false
   public_endpoint: "http://localhost:9000"
+
+fcm:
+  credentials_file: "../fcm-sa.json"
+  project_id: "notification-litechat"
 # logging:
 #   level: "info"
 #   format: "json"

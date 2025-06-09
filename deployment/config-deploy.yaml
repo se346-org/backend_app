@@ -38,3 +38,7 @@ minio:
   use_ssl: false
   token: ""
   public_endpoint: "http://localhost:9000"
+
+fcm:
+  credentials_file: "fcm-sa.json"
+  project_id: "notification-litechat"

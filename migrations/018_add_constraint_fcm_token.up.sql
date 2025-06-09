@@ -1,0 +1,1 @@
+alter table fcm_token add constraint unique_user_id_token unique (user_id, token);
