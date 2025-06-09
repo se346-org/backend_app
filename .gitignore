@@ -23,4 +23,7 @@ go.work.sum
 
 # env file
 .env
-.vscode
+
+# fcm-sa.json
+deployment/fcm-sa.json
+fcm-sa.json
