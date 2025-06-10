@@ -32,6 +32,7 @@ type UserUseCase interface {
 	GetUserInfoByEmail(ctx context.Context, email string) (*presenter.GetUserInfoResponse, error)
 	GetListUser(ctx context.Context, userID string, keyword string, limit int, lastID string) ([]*presenter.GetUserInfoResponse, error)
 	GetUserIDByAccountID(ctx context.Context, accountID string) (string, error)
+	UpdateUser(ctx context.Context, updateRequest *presenter.UpdateUserRequest) (*presenter.GetUserInfoResponse, error)
 }
 
 type userUseCase struct {
@@ -299,6 +300,44 @@ func (u *userUseCase) Register(ctx context.Context, registerRequest *presenter.R
 	}
 
 	return registerResponse, nil
+}
+
+// UpdateUser implements UserUseCase.
+func (u *userUseCase) UpdateUser(ctx context.Context, updateRequest *presenter.UpdateUserRequest) (*presenter.GetUserInfoResponse, error) {
+	ctx, span := u.obs.StartSpan(ctx, "UserUsecase.UpdateUser")
+	defer span()
+
+	accountID := ctx.Value(utils.AccountIDKey).(string)
+	user, err := u.userRepository.GetUserByAccountID(ctx, accountID)
+	if err != nil {
+		return nil, err
+	}
+
+	if updateRequest.FullName != "" {
+		user.FullName = updateRequest.FullName
+	}
+	if updateRequest.Avatar != "" {
+		user.Avatar = updateRequest.Avatar
+	}
+
+	now := time.Now()
+	user.UpdatedAt = &now
+
+	err = u.userRepository.UpdateUser(ctx, user)
+	if err != nil {
+		return nil, err
+	}
+
+	return &presenter.GetUserInfoResponse{
+		UserID:    user.ID,
+		Email:     user.Email,
+		FullName:  user.FullName,
+		Avatar:    user.Avatar,
+		Type:      user.Type,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
+		AccountID: user.AccountID,
+	}, nil
 }
 
 var _ UserUseCase = (*userUseCase)(nil)
