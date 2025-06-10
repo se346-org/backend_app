@@ -37,7 +37,7 @@ minio:
   secret_key: "CHANGEME123"
   use_ssl: false
   token: ""
-  public_endpoint: "http://localhost:9000"
+  public_endpoint: "http://10.0.2.2:9000"
 
 fcm:
   credentials_file: "fcm-sa.json"

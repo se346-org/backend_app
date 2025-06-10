@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/chat-socio/backend/pkg/observability"
 	"github.com/chat-socio/backend/pkg/pointer"
 	"github.com/cloudwego/hertz/pkg/app"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 type FCMHandler struct {
@@ -58,6 +60,16 @@ func (h *FCMHandler) CreateFCMToken(ctx context.Context, c *app.RequestContext) 
 	fcmToken.UpdatedAt = pointer.ToPtr(time.Now())
 
 	err = h.FcmUseCase.CreateFCMToken(ctx, &fcmToken)
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) {
+		if pgErr.Code == "23505" {
+			c.JSON(http.StatusOK, &presenter.BaseResponse[any]{
+				Message: "success",
+			})
+			return
+		}
+	}
+
 	if err != nil {
 		logger.Error("failed to create fcm token", err)
 		c.JSON(http.StatusInternalServerError, &presenter.BaseResponse[any]{
