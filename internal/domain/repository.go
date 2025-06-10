@@ -50,6 +50,7 @@ type ConversationRepository interface {
 	GetConversationByID(ctx context.Context, id string) (*Conversation, []*ConversationMemberWithUser, error)
 	UpdateLastMessageID(ctx context.Context, conversationID string, lastMessageID string) error
 	CheckIsMemberOfConversation(ctx context.Context, userID string, conversationID string) (bool, error)
+	CheckDMConversationExist(ctx context.Context, userID1 string, userID2 string) (*Conversation, error)
 }
 
 type MessageRepository interface {
@@ -76,4 +77,11 @@ type ContactRepository interface {
 	GetListRequestFriendReceivedByUserID(ctx context.Context, userID string, limit int, lastID string) ([]*RequestFriend, error)
 	AcceptRequestFriend(ctx context.Context, requestFriendID string) error
 	UpdateRequestFriendStatus(ctx context.Context, id string, status string) error
+}
+
+type FcmTokenRepository interface {
+	CreateFcmToken(ctx context.Context, fcmToken *FcmToken) error
+	GetFcmTokenByUserID(ctx context.Context, userID string) ([]*FcmToken, error)
+	DeleteFcmToken(ctx context.Context, id string) error
+	DeleteFcmTokenByUserIDAndToken(ctx context.Context, userID, token string) error
 }

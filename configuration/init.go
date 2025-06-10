@@ -15,6 +15,7 @@ type Config struct {
 	Nats          *NatsConfig          `yaml:"nats,omitempty"`
 	Observability *ObservabilityConfig `yaml:"observability,omitempty"`
 	Minio         *MinioConfig         `yaml:"minio,omitempty"`
+	FCM           *FCMConfig           `yaml:"fcm,omitempty"`
 }
 
 type ServerConfig struct {
@@ -66,6 +67,11 @@ type MinioConfig struct {
 	Token          string `yaml:"token,omitempty"`
 	UseSSL         bool   `yaml:"use_ssl,omitempty"`
 	PublicEndpoint string `yaml:"public_endpoint,omitempty"`
+}
+
+type FCMConfig struct {
+	ProjectID       string `yaml:"project_id,omitempty"`
+	CredentialsFile string `yaml:"credentials_file,omitempty"`
 }
 
 var ConfigInstance *Config

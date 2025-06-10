@@ -3,8 +3,10 @@ package usecase
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"time"
 
+	"firebase.google.com/go/v4/messaging"
 	"github.com/chat-socio/backend/internal/domain"
 	"github.com/chat-socio/backend/internal/presenter"
 	"github.com/chat-socio/backend/pkg/observability"
@@ -25,6 +27,7 @@ type ConversationUseCase interface {
 	SeenMessage(ctx context.Context, messageID string, userID string, conversationID string) error
 	GetListSeenMessageByConversationID(ctx context.Context, conversationID string) ([]*presenter.SeenMessageResponse, error)
 	HandleSeenMessage(ctx context.Context, message *domain.SeenMessage) error
+	HandleSendMessageToFCM(ctx context.Context, message *domain.Message) error
 }
 
 type conversationUseCase struct {
@@ -34,7 +37,9 @@ type conversationUseCase struct {
 	userOnlineRepository   domain.UserOnlineRepository
 	userRepository         domain.UserRepository
 	seenMessageRepository  domain.SeenMessageRepository
+	fcmRepository          domain.FcmTokenRepository
 	obs                    *observability.Observability
+	fcmClient              *messaging.Client
 }
 
 func (c *conversationUseCase) HandleSeenMessage(ctx context.Context, message *domain.SeenMessage) error {
@@ -62,6 +67,93 @@ func (c *conversationUseCase) HandleSeenMessage(ctx context.Context, message *do
 	if err != nil {
 		logger.Error("failed to publish seen message", err, message)
 		return err
+	}
+	return nil
+}
+
+func (c *conversationUseCase) HandleSendMessageToFCM(ctx context.Context, message *domain.Message) error {
+	fcmTokens := make([]*domain.FcmToken, 0)
+	logger := c.obs.Logger.WithContext(ctx)
+	if message.ConversationID == "" {
+		logger.Error("conversation id is empty", message)
+		return nil
+	}
+
+	messageDomain, err := c.messageRepository.GetMessageByID(ctx, message.ID)
+	if err != nil {
+		logger.Error("failed to get message by id", err, message)
+		return err
+	}
+
+	conversation, members, err := c.conversationRepository.GetConversationByID(ctx, messageDomain.ConversationID)
+	if err != nil {
+		logger.Error("failed to get conversation by id", err, message)
+		return err
+	}
+
+	for _, member := range members {
+		if member.UserID == messageDomain.UserID {
+			continue
+		}
+		fcmToken, err := c.fcmRepository.GetFcmTokenByUserID(ctx, member.UserID)
+		if err != nil {
+			logger.Error("failed to get fcm token by user id", err, member)
+			continue
+		}
+		fcmTokens = append(fcmTokens, fcmToken...)
+	}
+	for _, fcmToken := range fcmTokens {
+		var title string
+		if conversation.Type == domain.ConversationTypeGroup {
+			if conversation.Title == "" {
+				userNames := make([]string, 0)
+				for _, member := range members {
+					userNames = append(userNames, member.FullName)
+				}
+				title = strings.Join(userNames, ", ")
+			} else {
+				title = conversation.Title
+			}
+		} else {
+			if conversation.Title == "" {
+				for _, member := range members {
+					if member.UserID != fcmToken.UserID {
+						title = member.FullName
+						break
+					}
+				}
+			} else {
+				title = conversation.Title
+			}
+		}
+		data := map[string]string{
+			"conversation_id": conversation.ID,
+			"message_id":      messageDomain.ID,
+			"user_id":         messageDomain.UserID,
+			"type":            messageDomain.Type,
+			"body":            messageDomain.Body,
+			"reply_to":        messageDomain.ReplyTo,
+		}
+		if messageDomain.CreatedAt != nil {
+			data["created_at"] = messageDomain.CreatedAt.Format(time.RFC3339)
+		}
+		if messageDomain.UpdatedAt != nil {
+			data["updated_at"] = messageDomain.UpdatedAt.Format(time.RFC3339)
+		}
+		message := &messaging.Message{
+			Token: fcmToken.Token,
+			Notification: &messaging.Notification{
+				Title:    title,
+				Body:     messageDomain.Body,
+				ImageURL: conversation.Avatar,
+			},
+			Data: data,
+		}
+		_, err = c.fcmClient.Send(ctx, message)
+		if err != nil {
+			logger.Error("failed to send message to fcm", err, message)
+			continue
+		}
 	}
 	return nil
 }
@@ -248,7 +340,7 @@ func (c *conversationUseCase) HandleNewMessage(ctx context.Context, message *dom
 	return nil
 }
 
-func NewConversationUseCase(conversationRepository domain.ConversationRepository, messageRepository domain.MessageRepository, messagePublisher pubsub.Publisher, userOnlineRepository domain.UserOnlineRepository, userRepository domain.UserRepository, seenMessageRepository domain.SeenMessageRepository, obs *observability.Observability) ConversationUseCase {
+func NewConversationUseCase(conversationRepository domain.ConversationRepository, messageRepository domain.MessageRepository, messagePublisher pubsub.Publisher, userOnlineRepository domain.UserOnlineRepository, userRepository domain.UserRepository, seenMessageRepository domain.SeenMessageRepository, fcmRepository domain.FcmTokenRepository, obs *observability.Observability, fcmClient *messaging.Client) ConversationUseCase {
 	return &conversationUseCase{
 		conversationRepository: conversationRepository,
 		messageRepository:      messageRepository,
@@ -256,12 +348,28 @@ func NewConversationUseCase(conversationRepository domain.ConversationRepository
 		userOnlineRepository:   userOnlineRepository,
 		userRepository:         userRepository,
 		seenMessageRepository:  seenMessageRepository,
+		fcmRepository:          fcmRepository,
 		obs:                    obs,
+		fcmClient:              fcmClient,
 	}
 }
 
 // CreateConversation implements ConversationUseCase.
 func (c *conversationUseCase) CreateConversation(ctx context.Context, conversation *presenter.CreateConversationRequest) (*presenter.ConversationResponse, error) {
+	if conversation.Type == domain.ConversationTypeDM {
+		existConversation, err := c.conversationRepository.CheckDMConversationExist(ctx, conversation.Members[0], conversation.Members[1])
+		if err != nil && err != pgx.ErrNoRows {
+			return nil, err
+		}
+		if existConversation != nil {
+			return &presenter.ConversationResponse{
+				ConversationID: existConversation.ID,
+				Type:           existConversation.Type,
+				Title:          existConversation.Title,
+				Avatar:         existConversation.Avatar,
+			}, nil
+		}
+	}
 	conversationID, err := uuid.NewID()
 	if err != nil {
 		return nil, err
@@ -448,6 +556,12 @@ func (c *conversationUseCase) SendMessage(ctx context.Context, message *presente
 		return nil, err
 	}
 
+	err = c.messagePublisher.Publish(ctx, domain.SUBJECT_FCM_MESSAGE, messageDomain)
+	if err != nil {
+		logger.Error("failed to publish message to fcm", err, message)
+	}
+
+	// prepare message to send to websocket
 	user, err := c.userRepository.GetUserByID(ctx, message.UserID)
 	if err != nil {
 		logger.Error("error get user by id", err, message)

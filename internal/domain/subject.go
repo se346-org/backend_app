@@ -4,6 +4,7 @@ const (
 	//stream name
 	STREAM_NAME_WS_MESSAGE   = "WS_MESSAGE"
 	STREAM_NAME_CONVERSATION = "CONVERSATION"
+	STREAM_NAME_FCM          = "FCM"
 
 	//subject for conversation
 	SUBJECT_WILDCARD_CONVERSATION  = "conversation.*"
@@ -24,4 +25,14 @@ const (
 
 	//subject for seen message
 	SUBJECT_SEEN_MESSAGE = "conversation.seen_message"
+
+	//subject for fcm
+	SUBJECT_FCM_MESSAGE = "fcm.message"
+	SUBJECT_WILDCARD_FCM = "fcm.*"
+
+	//consumer name for fcm
+	CONSUMER_NAME_FCM_MESSAGE = "fcm_message_consumer"
+
+	//queue name for fcm
+	QUEUE_NAME_FCM_MESSAGE = "fcm_message_queue"
 )

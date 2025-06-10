@@ -16,6 +16,22 @@ type conversationRepository struct {
 	db *pgxpool.Pool
 }
 
+// CheckDMConversationExist implements domain.ConversationRepository.
+func (c *conversationRepository) CheckDMConversationExist(ctx context.Context, userID1 string, userID2 string) (*domain.Conversation, error) {
+	query := `
+		SELECT c.id, c.created_at, c.type, c.title, c.avatar, c.updated_at FROM conversation c
+		INNER JOIN conversation_member cm1 ON c.id = cm1.conversation_id
+		INNER JOIN conversation_member cm2 ON c.id = cm2.conversation_id
+		WHERE cm1.user_id = $1 AND cm2.user_id = $2 AND c.type = 'DM'
+	`
+	var conversation domain.Conversation
+	err := c.db.QueryRow(ctx, query, userID1, userID2).Scan(&conversation.ID, &conversation.CreatedAt, &conversation.Type, &conversation.Title, &conversation.Avatar, &conversation.UpdatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return &conversation, nil
+}
+
 // CreateConversation implements domain.ConversationRepository.
 func (c *conversationRepository) CreateConversation(ctx context.Context, conversation *domain.Conversation, conversationMembers []*domain.ConversationMember) (*domain.Conversation, error) {
 	tx, err := c.db.BeginTx(ctx, pgx.TxOptions{})
