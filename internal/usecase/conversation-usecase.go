@@ -358,7 +358,7 @@ func NewConversationUseCase(conversationRepository domain.ConversationRepository
 func (c *conversationUseCase) CreateConversation(ctx context.Context, conversation *presenter.CreateConversationRequest) (*presenter.ConversationResponse, error) {
 	if conversation.Type == domain.ConversationTypeDM {
 		existConversation, err := c.conversationRepository.CheckDMConversationExist(ctx, conversation.Members[0], conversation.Members[1])
-		if err != nil {
+		if err != nil && err != pgx.ErrNoRows {
 			return nil, err
 		}
 		if existConversation != nil {
